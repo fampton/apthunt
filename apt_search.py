@@ -38,6 +38,7 @@ def main():
     min = sys.argv[1]
     max = sys.argv[2]
     apartments = [i for i in AptSearch(min,max) if 'Ask' in i.keys()]
+    clusters = [i for i in AptSearch(min,max) if 'Ask' not in i.keys()]
     for apartment in apartments:
       clid = apartment['PostingID']
       if not database.exists("select * from Apartment where clid = $clid"):
@@ -52,7 +53,7 @@ def main():
                 clurl=apartment['PostingURL'],
                 imageurls='testurl',
                 )
-    pny.commit()
+    #pny.commit()
 
 if __name__ == '__main__':
     main()
