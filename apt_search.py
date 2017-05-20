@@ -6,7 +6,7 @@ import pony.orm as pny
 
 from datetime import datetime as dt
 
-database = pny.Database('sqlite', '/home/famp/git/apthunt/pdxapartments.sqlite', create_db=True)
+database = pny.Database('sqlite', '~/git/apthunt/pdxapartments.sqlite', create_db=True)
 
 class Apartment(database.Entity):
     ask = pny.Required(int)
