@@ -89,6 +89,7 @@ def main():
   se_apt = [apartment for apartment in apartments if ((northwest[0] > apartment['Latitude'] > southeast[0]) and (northwest[1] < apartment['Longitude'] < southeast[1]))]
   clusters = [i for i in AptSearch(min,max) if 'Ask' not in i.keys()]
   se_clusters = [cluster for cluster in clusters if ((northwest[0] > cluster['Latitude'] > southeast[0]) and (northwest[1] < cluster['Longitude'] < southeast[1]))]
+  # This is taking longer probably because each apartment and cluster has its own db transaction. Could possibly aggregate these somehow.
   for apartment in se_apt:
     add_apt(apartment)
   for cluster in se_clusters:
