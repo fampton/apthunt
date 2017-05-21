@@ -6,7 +6,7 @@ import pony.orm as pny
 
 from datetime import datetime as dt
 
-database = pny.Database('sqlite', '~/git/apthunt/pdxapartments.sqlite', create_db=True)
+database = pny.Database('sqlite', 'pdxapartments.sqlite', create_db=True)
 
 class Apartment(database.Entity):
     ask = pny.Required(int)
@@ -15,6 +15,7 @@ class Apartment(database.Entity):
     title = pny.Required(str)
     lat = pny.Required(float)
     lon = pny.Required(float)
+    # craigslist listing ID
     clid = pny.Required(int, size=64)
     postdate = pny.Required(dt)
     clurl = pny.Required(str)
@@ -37,6 +38,7 @@ def main():
     import sys
     min = sys.argv[1]
     max = sys.argv[2]
+    # check if entry in returned json is a listing or a cluster of listings by looking at its keys 'Ask' denotes apartment ask price
     apartments = [i for i in AptSearch(min,max) if 'Ask' in i.keys()]
     clusters = [i for i in AptSearch(min,max) if 'Ask' not in i.keys()]
     for apartment in apartments:
@@ -51,8 +53,10 @@ def main():
                 clid=apartment['PostingID'],
                 postdate=dt.fromtimestamp(apartment['PostedDate']),
                 clurl=apartment['PostingURL'],
+                # Can store image urls and later add feature that looks for duplicate postings based on either text or image
                 imageurls='testurl',
                 )
+    # I dont remember why this is commented out and when its needed.
     #pny.commit()
 
 if __name__ == '__main__':
