@@ -21,10 +21,12 @@ class Apartment(database.Entity):
     clurl = pny.Required(str)
 
 database.generate_mapping(create_tables=True)
-pdxclurl = 'https://portland.craigslist.org/jsonsearch/apa/'
+pdxclurl = 'https://portland.craigslist.org/jsonsearch/apa/mlt'
+southeast = (45.501790,-122.622177)
+northwest = (45.525216,-122.655179)
 
 def params(minp, maxp):
-    return {'min_price': minp, 'max_price': maxp}
+    return {'min_price': minp, 'max_price': maxp, 'min_bedrooms': 1, 'max_bedrooms': 2, 'map': 1, 'availabilityMode': 0}
 
 def AptSearch(min,max):
   results = requests.get(pdxclurl,params=params(min,max))
@@ -40,8 +42,10 @@ def main():
     max = sys.argv[2]
     # check if entry in returned json is a listing or a cluster of listings by looking at its keys 'Ask' denotes apartment ask price
     apartments = [i for i in AptSearch(min,max) if 'Ask' in i.keys()]
+    se_apt = [apartment for apartment in apartments if ((northwest[0] > apartment['Latitude'] > southeast[0]) and (northwest[1] < apartment['Longitude'] < southeast[1]))]
     clusters = [i for i in AptSearch(min,max) if 'Ask' not in i.keys()]
-    for apartment in apartments:
+    se_clusters = [cluster for cluster in clusters if ((northwest[0] > cluster['Latitude'] > southeast[0]) and (northwest[1] < cluster['Longitude'] < southeast[1]))]
+    for apartment in se_apt:
       clid = apartment['PostingID']
       if not database.exists("select * from Apartment where clid = $clid"):
         apartment = Apartment(
