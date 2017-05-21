@@ -28,7 +28,9 @@ class Cluster(database.Entity):
   clurl = pny.Required(str)
 
 database.generate_mapping(create_tables=True)
-pdxclurl = 'https://portland.craigslist.org/jsonsearch/apa/mlt'
+base_url = 'https://portland.craigslist.org'
+search_url = '/jsonsearch/apa/mlt'
+pdxclurl = base_url + search_url
 southeast = (45.501790,-122.622177)
 northwest = (45.525216,-122.655179)
 
@@ -42,7 +44,42 @@ def AptSearch(min,max):
   else:
     return 'No json returned'
 
+def ClusterSearch(url):
+  results = requests.get(base_url+url)
+  if results.json():
+    return results.json()[0]
+  else:
+    return 'No json returned'
+
 @pny.db_session
+def add_cluster(cluster):
+  clid = cluster['PostingID']
+  if not database.exists("select * from Cluster where clid = $clid"):
+    cluster = Cluster(
+      geocluster = cluster['GeoCluster'],
+      lat = cluster['Latitude'],
+      lon = cluster['Longitude'],
+      clid = cluster['PostingID'],
+      clurl = cluster['url']
+      )
+
+@pny.db_session
+def add_apt(apartment):
+  clid = apartment['PostingID']
+  if not database.exists("select * from Apartment where clid = $clid"):
+    apartment = Apartment(
+      ask=apartment['Ask'],
+      bedrooms=apartment['Bedrooms'],
+      title=apartment['PostingTitle'],
+      lat=apartment['Latitude'],
+      lon=apartment['Longitude'],
+      clid=apartment['PostingID'],
+      postdate=dt.fromtimestamp(apartment['PostedDate']),
+      clurl=apartment['PostingURL'],
+      # Can store image urls and later add feature that looks for duplicate postings based on either text or image
+      imageurls='testurl',
+      )
+
 def main():
   import sys
   min = sys.argv[1]
@@ -53,29 +90,12 @@ def main():
   clusters = [i for i in AptSearch(min,max) if 'Ask' not in i.keys()]
   se_clusters = [cluster for cluster in clusters if ((northwest[0] > cluster['Latitude'] > southeast[0]) and (northwest[1] < cluster['Longitude'] < southeast[1]))]
   for apartment in se_apt:
-    clid = apartment['PostingID']
-    if not database.exists("select * from Apartment where clid = $clid"):
-      apartment = Apartment(
-        ask=apartment['Ask'],
-        bedrooms=apartment['Bedrooms'],
-        title=apartment['PostingTitle'],
-        lat=apartment['Latitude'],
-        lon=apartment['Longitude'],
-        clid=apartment['PostingID'],
-        postdate=dt.fromtimestamp(apartment['PostedDate']),
-        clurl=apartment['PostingURL'],
-        # Can store image urls and later add feature that looks for duplicate postings based on either text or image
-        imageurls='testurl',
-        )
+    add_apt(apartment)
   for cluster in se_clusters:
-    if not database.exists("select * from Cluster where clid = $clid"):
-      cluster = Cluster(
-        geocluster = cluster['GeoCluster'],
-        lat = cluster['Latitude'],
-        lon = cluster['Longitude'],
-        clid = cluster['PostingID'],
-        clurl = cluster['url']
-        )
+    add_cluster(cluster)
+    cluster_json = ClusterSearch(cluster['url'])
+    for apartment in cluster_json:
+      add_apt(apartment)
   # I dont remember why this is commented out and when its needed.
   #pny.commit()
 
